@@ -5,8 +5,11 @@ import threading
 import time
 import struct
 
+
+local_host = "127.0.0.1"
+local_network = '192.168.4.148'
 class Client:
-    def __init__(self, host='127.0.0.1', port=9999):
+    def __init__(self, host=local_host, port=9999):
 
         self.host = host
         self.port = port

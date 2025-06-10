@@ -5,6 +5,7 @@ import struct
 
 local_host = '127.0.0.1'
 local_network = '0.0.0.0'
+
 class Server:
     def __init__(self, host=local_network, port=9999):
         self.host = host
@@ -44,6 +45,7 @@ class Server:
             while not self.kill:
                 s.settimeout(1) # prevents getting stuck in a socket call when trying to stop thread
                 s.listen()
+                print(f"Server is listening on port {self.port}...")
                 try:
                     conn, addr = s.accept()
                     print("New Connection: ", conn, addr)
@@ -53,7 +55,7 @@ class Server:
                 except socket.timeout:
                     # when no one connects, just move on
                     continue
-                time.sleep(0.01)
+                time.sleep(0.1)
 
 
         self.thread_count -= 1
