@@ -56,8 +56,6 @@ class Server:
                     # when no one connects, just move on
                     continue
                 time.sleep(0.1)
-
-
         self.thread_count -= 1
     
     def await_kill(self):

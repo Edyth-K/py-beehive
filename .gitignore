@@ -1,1 +1,4 @@
 venv/
+myenv/
+test.py
+notes.*

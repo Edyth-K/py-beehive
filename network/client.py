@@ -5,11 +5,11 @@ import threading
 import time
 import struct
 
-
 local_host = "127.0.0.1"
 local_network = '192.168.4.148'
+
 class Client:
-    def __init__(self, host=local_host, port=9999):
+    def __init__(self, host=local_network, port=9999):
 
         self.host = host
         self.port = port
@@ -21,7 +21,7 @@ class Client:
         pygame.init()
 
         # Window dimensions
-        self.screen = pygame.display.set_mode((800, 850))
+        self.screen = pygame.display.set_mode((1280, 720))
         self.clock = pygame.time.Clock()
 
         pygame.display.set_caption("Move the Red Square")
