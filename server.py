@@ -3,8 +3,10 @@ import threading
 import time
 import struct
 
+local_host = '127.0.0.1'
+local_network = '0.0.0.0'
 class Server:
-    def __init__(self, host='127.0.0.1', port=9999):
+    def __init__(self, host=local_network, port=9999):
         self.host = host
         self.port = port
 
