@@ -43,32 +43,31 @@ class Client:
         pygame.display.update()
 
     def send_to_server(self):
-        self.socket.sendall(struct.pack('ii', self.x, self.y))
+        try:
+            self.socket.sendall(struct.pack('ii', self.x, self.y))
+        except AttributeError:
+            pass
 
     def run_listener(self):
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
-                s.connect((self.host, self.port))
-                s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
-                s.settimeout(1)
-                print("Connected: ", s)
-                self.socket = s
-                while not self.kill:
-                    try:
-                        data = self.socket.recv(4096)
-                        if len(data):
-                            pass
-                    except socket.timeout:
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
+            s.connect((self.host, self.port))
+            s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
+            s.settimeout(1)
+            print("Connected: ", s)
+            self.socket = s
+            while not self.kill:
+                try:
+                    data = self.socket.recv(4096)
+                    if len(data):
                         pass
-                    time.sleep(0.001)
-        except AttributeError:
-            sys.exit()
-            
+                except socket.timeout:
+                    pass
+                time.sleep(0.001)
+
     def run(self):
-
         threading.Thread(target=self.run_listener).start()
-
         while True:
             self.clock.tick(60) 
             self.update()
