@@ -25,7 +25,7 @@ class Server:
                 try:
                     data = conn.recv(4096)
                     if len(data):
-                        x, y = struct.unpack('ii', data)
+                        x, y = struct.unpack('ff', data)
                         print(f"Received: {x}, {y}")
                 except socket.timeout:
                     pass
