@@ -7,7 +7,7 @@ import threading
 import socket
 
 class Client:
-    def __init__(self, host='127.0.0.1', port=9999):
+    def __init__(self, host='192.168.4.148', port=9999):
         
         # netcode
         self.is_connected = False
@@ -33,12 +33,12 @@ class Client:
         self.x = 100
         self.y = 100
 
-        self.bg_surf = pygame.image.load(join('space shooter', 'resources', 'images', 'bg.jpg')).convert()
+        self.bg_surf = pygame.image.load(join('resources', 'images', 'bg.jpg')).convert()
         self.bg_surf = pygame.transform.scale(self.bg_surf, self.display_surface.get_size())
         self.bg_rect = self.bg_surf.get_frect(topleft = (0,0))
 
         # importing images
-        self.player_surf = pygame.image.load(join('space shooter', 'resources', 'images', 'player.png')).convert_alpha()
+        self.player_surf = pygame.image.load(join('resources', 'images', 'player.png')).convert_alpha()
         self.player_rect = self.player_surf.get_frect(center = (WINDOW_WIDTH/2, WINDOW_HEIGHT-WINDOW_HEIGHT/4))
         self.drag_player = False # boolean to see if cursor is pressed on player
         self.player_speed = 500
@@ -49,10 +49,10 @@ class Client:
         # for i in range(20):
         #     star_pos.append(((randint(0,1200)), (randint(0,650))))
 
-        self.meteor_surf = pygame.image.load(join('space shooter', 'resources', 'images', 'meteor.png')).convert_alpha()
+        self.meteor_surf = pygame.image.load(join('resources', 'images', 'meteor.png')).convert_alpha()
         self.meteor_rect = self.meteor_surf.get_frect(center = (WINDOW_WIDTH/2, WINDOW_HEIGHT/2))
 
-        self.laser_surf = pygame.image.load(join('space shooter', 'resources', 'images', 'laser.png')).convert_alpha()
+        self.laser_surf = pygame.image.load(join('resources', 'images', 'laser.png')).convert_alpha()
         self.laser_rect = self.laser_surf.get_frect(bottomleft = (20,WINDOW_HEIGHT-20))
 
 
