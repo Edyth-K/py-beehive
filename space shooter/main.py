@@ -44,6 +44,9 @@ class Client:
         self.player_speed = 500
         self.player_direction = pygame.math.Vector2(0,0)
 
+        self.player2_surf = pygame.image.load(join('resources', 'images', 'player.png')).convert_alpha()
+        self.player2_rect = self.player2_surf.get_frect(center = (-100,WINDOW_HEIGHT-100))
+
         # star_surf = pygame.image.load(join('space shooter', 'resources', 'images', 'star.png')).convert_alpha()
         # star_pos = []
         # for i in range(20):
@@ -69,7 +72,9 @@ class Client:
                 try:
                     data = self.socket.recv(4096)
                     if len(data):
-                        pass
+                        update_format = 'ff'
+                        if len(data) >= struct.calcsize(update_format):
+                            self.player2_rect.center = struct.unpack_from(update_format, data, 0)
                 except socket.timeout:
                     pass
                 time.sleep(0.001)
@@ -115,7 +120,8 @@ class Client:
             # draw
             self.display_surface.fill((30, 30, 30))
             self.display_surface.blit(self.bg_surf, self.bg_rect)
-            
+
+
             # draw stars
             # for i in range(20):
             #     display_surface.blit(star_surf, star_pos[i])
@@ -123,8 +129,11 @@ class Client:
             self.display_surface.blit(self.meteor_surf, self.meteor_rect)
             self.display_surface.blit(self.laser_surf, self.laser_rect)
 
+            
+            self.display_surface.blit(self.player2_surf, self.player2_rect)
             self.display_surface.blit(self.player_surf, self.player_rect)
-            print(self.player_rect.x)
+        
+            print(self.player_rect.x+self.player_rect.width/2)
             pygame.display.update()
 
             if self.is_connected:
