@@ -6,6 +6,49 @@ import struct
 import threading
 import socket
 
+WINDOW_WIDTH, WINDOW_HEIGHT = 1280, 720
+WINDOW_DIMENSIONS = (WINDOW_WIDTH, WINDOW_HEIGHT)
+
+class Player(pygame.sprite.Sprite):
+    def __init__(self, groups,  pos=(WINDOW_WIDTH/2, WINDOW_HEIGHT-WINDOW_HEIGHT/4)):
+        super().__init__(groups)
+        self.image = pygame.image.load(join('resources', 'images', 'player.png')).convert_alpha()
+        self.rect = self.image.get_frect(center = pos)
+        self.drag = False # boolean to see if cursor is pressed on player
+        self.speed = 500
+        self.direction = pygame.math.Vector2(0,0)
+
+    def update(self, dt):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_w]:
+            self.direction.y = -1
+        else:
+            self.direction.y = 0
+        if keys[pygame.K_a]:
+            self.direction.x = -1
+        else:
+            self.direction.x = 0
+        if keys[pygame.K_s]:
+            self.direction.y = 1
+        if keys[pygame.K_d]:
+            self.direction.x = 1
+
+        self.direction = self.direction.normalize() if self.direction else self.direction
+        self.rect.center += self.direction * self.speed * dt
+
+        recent_keys = pygame.key.get_just_pressed()
+        if recent_keys[pygame.K_SPACE]:
+            pass # TODO: fire laser
+
+class Star(pygame.sprite.Sprite):
+    def __init__(self, groups, surf):
+        super().__init__(groups)
+        self.image = surf
+        self.rect = self.image.get_frect(center = (randint(0,WINDOW_WIDTH), randint(0,WINDOW_HEIGHT)))
+    
+    def update(self, dt):
+        pass
+
 class Client:
     def __init__(self, host='192.168.4.148', port=9999):
         
@@ -20,37 +63,30 @@ class Client:
 
         # general setup
         pygame.init()
-        WINDOW_WIDTH, WINDOW_HEIGHT = 1280, 720
-        WINDOW_DIMENSIONS = (WINDOW_WIDTH, WINDOW_HEIGHT)
+
         self.display_surface = pygame.display.set_mode(WINDOW_DIMENSIONS)
         pygame.display.set_caption("Change")
         self.running = True
         self.clock = pygame.time.Clock()
-
 
         # surface
         self.surf = pygame.Surface((100, 200))
         self.x = 100
         self.y = 100
 
+        self.all_sprites = pygame.sprite.Group()
+    
         self.bg_surf = pygame.image.load(join('resources', 'images', 'bg.jpg')).convert()
         self.bg_surf = pygame.transform.scale(self.bg_surf, self.display_surface.get_size())
         self.bg_rect = self.bg_surf.get_frect(topleft = (0,0))
 
-        # importing images
-        self.player_surf = pygame.image.load(join('resources', 'images', 'player.png')).convert_alpha()
-        self.player_rect = self.player_surf.get_frect(center = (WINDOW_WIDTH/2, WINDOW_HEIGHT-WINDOW_HEIGHT/4))
-        self.drag_player = False # boolean to see if cursor is pressed on player
-        self.player_speed = 500
-        self.player_direction = pygame.math.Vector2(0,0)
+        star_surf = pygame.image.load(join('resources', 'images', 'star.png')).convert_alpha()
+        for i in range(20):
+            Star(self.all_sprites, star_surf)
+        self.player = Player(self.all_sprites)
 
         self.player2_surf = pygame.image.load(join('resources', 'images', 'player.png')).convert_alpha()
         self.player2_rect = self.player2_surf.get_frect(center = (-100,WINDOW_HEIGHT-100))
-
-        # star_surf = pygame.image.load(join('space shooter', 'resources', 'images', 'star.png')).convert_alpha()
-        # star_pos = []
-        # for i in range(20):
-        #     star_pos.append(((randint(0,1200)), (randint(0,650))))
 
         self.meteor_surf = pygame.image.load(join('resources', 'images', 'meteor.png')).convert_alpha()
         self.meteor_rect = self.meteor_surf.get_frect(center = (WINDOW_WIDTH/2, WINDOW_HEIGHT/2))
@@ -80,8 +116,9 @@ class Client:
                 time.sleep(0.001)
 
     def run(self):
-        # uncomment when enabling multiplayer
+        # MULTIPLAYER
         # threading.Thread(target=self.run_listener).start()
+
         while self.running:
 
             dt = self.clock.tick(120) / 1000
@@ -91,50 +128,30 @@ class Client:
                     self.kill = True
                     self.running = False
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1 and self.player_rect.collidepoint(pygame.mouse.get_pos()):
-                        self.drag_player = True
+                    if event.button == 1 and self.player.rect.collidepoint(pygame.mouse.get_pos()):
+                        self.player.drag = True
                 if event.type == pygame.MOUSEBUTTONUP:
                     if event.button == 1:
-                        self.drag_player = False
+                        self.player.drag = False
                 if event.type == pygame.MOUSEMOTION:
-                    if self.drag_player:
-                        self.player_rect.center = pygame.mouse.get_pos()
+                    if self.player.drag:
+                        self.player.rect.center = pygame.mouse.get_pos()
 
-            keys = pygame.key.get_pressed()
-            if keys[pygame.K_w]:
-                self.player_direction.y = -1
-            else:
-                self.player_direction.y = 0
-            if keys[pygame.K_a]:
-                self.player_direction.x = -1
-            else:
-                self.player_direction.x = 0
-            if keys[pygame.K_s]:
-                self.player_direction.y = 1
-            if keys[pygame.K_d]:
-                self.player_direction.x = 1
-
-
-            self.player_direction = self.player_direction.normalize() if self.player_direction else self.player_direction
-            self.player_rect.center += self.player_direction * self.player_speed * dt
+            self.all_sprites.update(dt)
 
             # draw
             self.display_surface.fill((30, 30, 30))
             self.display_surface.blit(self.bg_surf, self.bg_rect)
 
-
-            # draw stars
-            # for i in range(20):
-            #     display_surface.blit(star_surf, star_pos[i])
-
             self.display_surface.blit(self.meteor_surf, self.meteor_rect)
             self.display_surface.blit(self.laser_surf, self.laser_rect)
 
-            
-            self.display_surface.blit(self.player2_surf, self.player2_rect)
-            self.display_surface.blit(self.player_surf, self.player_rect)
-        
-            print(self.player_rect.x+self.player_rect.width/2)
+            # MULTIPLAYER
+            # self.display_surface.blit(self.player2_surf, self.player2_rect)
+
+
+            self.all_sprites.draw(self.display_surface)
+
             pygame.display.update()
 
             if self.is_connected:
