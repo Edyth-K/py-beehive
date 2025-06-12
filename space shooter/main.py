@@ -74,7 +74,7 @@ class Client:
                     if len(data):
                         update_format = 'ff'
                         if len(data) >= struct.calcsize(update_format):
-                            self.player2_rect.center = struct.unpack_from(update_format, data, 0)
+                            self.player2_rect.topleft = struct.unpack_from(update_format, data, 0)
                 except socket.timeout:
                     pass
                 time.sleep(0.001)
@@ -139,7 +139,7 @@ class Client:
             if self.is_connected:
                 try:
                     self.socket.sendall(struct.pack('ff', self.player_rect.x, self.player_rect.y))
-                except AttributeError:
+                except (AttributeError, OSError):
                     pass
             
             time.sleep(0.001)

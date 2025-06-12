@@ -21,13 +21,23 @@ class Server:
         self.thread_count += 1
         conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
         conn.settimeout(1)
+        buffer = b''
+
         with conn:
             while not self.kill:
                 try:
-                    data = conn.recv(4096)
-                    if len(data):
+                    chunk = conn.recv(4096)
+                    if not chunk:
+                        break
+                    buffer += chunk
+                    while len(buffer) >= 8:
+                        data = buffer[:8]
+                        buffer = buffer[8:]
                         x, y = struct.unpack('ff', data)
-                        self.player_positions[conn] = (x, y)
+                        self.player_positions[conn] = x,y
+                    # if len(data):
+                    #     x, y = struct.unpack('ff', data)
+                    #     self.player_positions[conn] = (x, y)
                 except socket.timeout:
                     pass
                 except (ConnectionAbortedError, ConnectionResetError):
@@ -62,6 +72,11 @@ class Server:
     
     def await_kill(self):
         self.kill = True
+        for conn in self.players:
+            try:
+                conn.close()
+            except:
+                pass
         while self.thread_count:
             time.sleep(0.01)
         print("Killed Server")
@@ -70,18 +85,21 @@ class Server:
         threading.Thread(target=self.connection_listen_loop).start()
         try:
             while True:
-                print(self.players)
-                print(self.player_positions)
+                # print(self.players)
+                # print(self.player_positions)
+                
+                # for conn, pos in self.player_positions.items():
+                #     print(pos[0])
                 # server action here
 
                 for conn, _ in self.player_positions.items():
                     for other_conn, position in self.player_positions.items():
                         if conn != other_conn:
                             try:
-                                conn.send(struct.pack(struct.pack('ff', position[0], position[1])))
+                                conn.send(struct.pack('ff', position[0], position[1]))
                             except OSError:
                                 pass
-                time.sleep(1)
+                time.sleep(0.01)
         except KeyboardInterrupt:
             self.await_kill()
 
