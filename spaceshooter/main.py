@@ -80,7 +80,8 @@ class Client:
                 time.sleep(0.001)
 
     def run(self):
-        threading.Thread(target=self.run_listener).start()
+        # uncomment when enabling multiplayer
+        # threading.Thread(target=self.run_listener).start()
         while self.running:
 
             dt = self.clock.tick(120) / 1000
