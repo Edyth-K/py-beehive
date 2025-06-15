@@ -19,3 +19,8 @@ Exploring networking and game development in python using pygame-ce.
 - experimented with basic multiplayer using ideas from [/network](#network)
   - implemented synced 2-player spaceship movement across network, but removed it when adding other features 
 - assets from https://github.com/clear-code-projects/5games
+
+## animation
+![Animation Gif](animation/animation.gif)
+- learned animations from sprite sheets with basic input
+- assets from https://www.spriters-resource.com/
