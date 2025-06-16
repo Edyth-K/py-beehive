@@ -3,36 +3,69 @@ from settings import *
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos, groups, collision_sprites):
         super().__init__(groups)
+        self.image = pygame.image.load(join('assets', 'images', 'player','sheet.png')).convert_alpha()
         self.load_images()
         self.state, self.frame_index = 'down', 0
         self.animation_speed = 5
-        self.image = pygame.image.load(join('assets', 'images', 'player','down', '0.png')).convert_alpha()
-        self.rect = self.image.get_frect(center = pos)
+        
+        self.rect = self.frames['idle'][0].get_frect(center = pos)
+
         self.hitbox_rect = self.rect.inflate(-100, -100) # shrink width of hitbox by 40
         self.speed = 500
         self.direction = pygame.math.Vector2(0,0)
         self.collision_sprites = collision_sprites
 
     def load_images(self):
-        self.frames = {'left':[], 'right':[], 'up':[], 'down':[]}
-
+        # LOAD FRAMES FROM SINGLE SPRITE SHEET
+        self.frames = {'idle': [], 'left':[], 'right':[], 'up':[], 'down':[],
+                       'attack':[],'d_left':[],'d_right':[],'u_left':[],'u_right':[]}
+        state_index = -1
+        scale = 4
         for state in self.frames.keys():
-            for folder_path, sub_folders, file_names in walk(join('assets', 'images', 'player', state)):
-                if file_names:
-                    for file_name in sorted(file_names, key= lambda name: int(name.split('.')[0])):
-                        full_path = join(folder_path, file_name)
-                        surf = pygame.image.load(full_path).convert_alpha()
-                        self.frames[state].append(surf)
-        print(self.frames)
+            state_index += 1
+            for frame_index in range(4):
+                rect = pygame.Rect(frame_index*32, state_index*32, 32, 32)
+                frame = self.image.subsurface(rect).copy()
+                new_size = (int(rect.width * scale), int(rect.height * scale))
+                frame = pygame.transform.scale(frame, new_size)
+                self.frames[state].append(frame)
+
+
+        # LOAD FRAMES FROM MULTIPLE IMAGES
+        # self.frames = {'left':[], 'right':[], 'up':[], 'down':[]}
+
+        # for state in self.frames.keys():
+        #     for folder_path, sub_folders, file_names in walk(join('assets', 'images', 'player', state)):
+        #         if file_names:
+        #             for file_name in sorted(file_names, key= lambda name: int(name.split('.')[0])):
+        #                 full_path = join(folder_path, file_name)
+        #                 surf = pygame.image.load(full_path).convert_alpha()
+        #                 self.frames[state].append(surf)
+        
 
     def animate(self, dt):
+
+        # 8-direction movement key
+        DIRECTION_TO_ANIM = {
+            (0, -1): "up",
+            (0, 1): "down",
+            (-1, 0): "left",
+            (1, 0): "right",
+            (-1, -1): "u_left",
+            (1, -1): "u_right",
+            (-1, 1): "d_left",
+            (1, 1): "d_right",
+            (0, 0): "idle"
+        }
+        
         # get state
-        if self.direction.x != 0:
-            self.state = 'right' if self.direction.x > 0 else 'left'
-        if self.direction.y != 0:
-            self.state = 'down' if self.direction.y > 0 else 'up'
-        if self.direction.x == 0 and self.direction.y == 0:
-            self.frame_index = 0
+        self.state = DIRECTION_TO_ANIM[(round(self.direction.x), round(self.direction.y))]
+        # if self.direction.x != 0:
+        #     self.state = 'right' if self.direction.x > 0 else 'left'
+        # if self.direction.y != 0:
+        #     self.state = 'down' if self.direction.y > 0 else 'up'
+        # if self.direction.x == 0 and self.direction.y == 0:
+        #     self.state = 'idle'
 
         # animate
         self.frame_index += self.animation_speed * dt
