@@ -23,6 +23,8 @@ class Game:
         # map
         self.setup()
 
+        
+
         # sprites
         # player_spawn = (2000,2000)#(WINDOW_WIDTH/2, WINDOW_HEIGHT/2)
         # self.player = Player(player_spawn, self.all_sprites, self.collision_sprites) # moved to setup()
