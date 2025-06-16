@@ -3,6 +3,7 @@ import time
 from player import Player
 from sprites import *
 from pytmx.util_pygame import load_pygame
+from groups import AllSprites
 
 from random import randint
 
@@ -16,14 +17,15 @@ class Game:
         self.clock = pygame.time.Clock()
 
         # groups
-        self.all_sprites = pygame.sprite.Group()
+        self.all_sprites = AllSprites()
         self.collision_sprites = pygame.sprite.Group()
 
         # map
         self.setup()
 
         # sprites
-        self.player = Player((WINDOW_WIDTH/2, WINDOW_HEIGHT/2), self.all_sprites, self.collision_sprites)
+        player_spawn = (2000,2000)#(WINDOW_WIDTH/2, WINDOW_HEIGHT/2)
+        self.player = Player(player_spawn, self.all_sprites, self.collision_sprites)
 
 
     def setup(self):
@@ -56,7 +58,7 @@ class Game:
 
             # draw
             self.display_surface.fill('black')
-            self.all_sprites.draw(self.display_surface)
+            self.all_sprites.draw(self.player.rect.center)
 
             pygame.display.update()
 
