@@ -4,3 +4,4 @@ test.py
 notes.*
 resources_full/
 animation/sheet.png
+__pycache__
