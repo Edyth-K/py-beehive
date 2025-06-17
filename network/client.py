@@ -52,7 +52,6 @@ class Client:
             pass
 
     def run_listener(self):
-
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
             s.connect((self.host, self.port))
