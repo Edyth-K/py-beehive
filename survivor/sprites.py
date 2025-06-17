@@ -78,10 +78,10 @@ class Enemy(pygame.sprite.Sprite):
         self.hitbox_rect = self.rect.inflate(-20,-40)
         self.collision_sprites = collision_sprites
         self.direction = pygame.Vector2()
-        self.speed = 300
+        self.speed = 200
 
         self.death_time = 0
-        self.death_duration = 400
+        self.death_duration = 200
 
     def move(self, dt):
         # get direction
@@ -113,6 +113,7 @@ class Enemy(pygame.sprite.Sprite):
         surf = pygame.mask.from_surface(self.frames[0]).to_surface()
         surf.set_colorkey('black')
         self.image = surf
+
 
     def death_timer(self):
         if pygame.time.get_ticks() - self.death_time >= self.death_duration:
