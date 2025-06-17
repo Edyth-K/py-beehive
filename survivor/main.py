@@ -84,6 +84,16 @@ class Game:
             else:
                 self.spawn_positions.append((obj.x, obj.y))
 
+    def attack_collision(self):
+        if self.attack_sprites:
+            for attack in self.attack_sprites:
+                collision_sprites = pygame.sprite.spritecollide(attack, self.enemy_sprites, False, pygame.sprite.collide_mask)
+                if collision_sprites:
+                    for sprite in collision_sprites:
+                        sprite.destroy()
+                    attack.kill()
+
+
     def run(self):
         while self.running:
             dt = self.clock.tick(120) / 1000
@@ -98,6 +108,7 @@ class Game:
             self.attack_timer()
             self.input()
             self.all_sprites.update(dt)
+            self.attack_collision()
 
             # draw
             self.display_surface.fill('black')
