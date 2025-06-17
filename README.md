@@ -21,6 +21,14 @@ Exploring networking and game development in python using pygame-ce.
 - assets from https://github.com/clear-code-projects/5games
 
 ## animation
-![Animation Gif](animation/animation.gif)
+![Animation Gif](readme_images/animation.gif)
 - learned animations from sprite sheets with basic input
 - assets from https://www.spriters-resource.com/
+
+## survivor
+![Survivor Gif](readme_images/survivor.gif)
+- survivor-like / bullet heaven clone
+- importing maps, objects from tiled using pytmx
+- implemented player animation from previous demo
+- better code organization using multiple files and class hierarchy
+- more sprite manipulation and drawing, collision logic
