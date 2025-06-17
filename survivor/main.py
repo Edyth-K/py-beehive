@@ -23,8 +23,6 @@ class Game:
         # map
         self.setup()
 
-        
-
         # sprites
         # player_spawn = (2000,2000)#(WINDOW_WIDTH/2, WINDOW_HEIGHT/2)
         # self.player = Player(player_spawn, self.all_sprites, self.collision_sprites) # moved to setup()
@@ -48,6 +46,7 @@ class Game:
         for obj in map.get_layer_by_name('Entities'):
             if obj.name == 'Player':
                 self.player = Player((obj.x, obj.y), self.all_sprites, self.collision_sprites)
+                self.aim_indicator = AimIndicator(self.player, self.all_sprites)
 
     def run(self):
         while self.running:
