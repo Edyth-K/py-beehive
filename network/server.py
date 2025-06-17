@@ -74,16 +74,8 @@ class Server:
         with self._player_lock:
             for p in self._players:
                 try:
-<<<<<<< patch-1
                     p.shutdown(socket.SHUT_RDWR)
                 except OSError:
-=======
-                    data = conn.recv(4096)
-                    if len(data):
-                        x, y = struct.unpack('ff', data)
-                        print(f"Received: {x}, {y}")
-                except socket.timeout:
->>>>>>> main
                     pass
                 p.close()
 
