@@ -1,82 +1,197 @@
+import logging
 import socket
+import struct
 import threading
 import time
-import struct
+from dataclasses import dataclass, field
+from typing import List, Tuple
 
-local_host = '127.0.0.1'
-local_network = '0.0.0.0'
+# --------------------------------------------------------------------------- #
+# Configuration
+# --------------------------------------------------------------------------- #
+
+@dataclass
+class ServerConfig:
+    host: str = "0.0.0.0"
+    port: int = 9_999
+    max_players: int = 4
+    recv_timeout: float = 1.0          # seconds
+    listen_backlog: int = 8
+    msg_fmt: str = "ii"                # two signed 32‑bit ints
+    log_level: int = logging.INFO
+
+
+# --------------------------------------------------------------------------- #
+# Server
+# --------------------------------------------------------------------------- #
 
 class Server:
-    def __init__(self, host=local_network, port=9999):
-        self.host = host
-        self.port = port
+    """Minimal threaded TCP server that receives pairs of ints from clients."""
 
-        self.kill = False
-        self.thread_count = 0
+    def __init__(self, cfg: ServerConfig = ServerConfig()) -> None:
+        self.cfg = cfg
+        self._shutdown = threading.Event()
+        self._player_lock = threading.Lock()
+        self._players: List[socket.socket] = []
+        self._threads: List[threading.Thread] = []
 
-        self.players = []
-    
-    def run_player_listener(self, conn):
-        self.thread_count += 1
-        conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
-        conn.settimeout(1)
-        with conn:
-            while not self.kill:
+        logging.basicConfig(
+            level=cfg.log_level,
+            format="%(asctime)s [%(threadName)s] %(levelname)s: %(message)s",
+        )
+
+    # ..................................................................... #
+    # Public API
+    # ..................................................................... #
+
+    def start(self) -> None:
+        """Start listening and (in the main thread) process outgoing work."""
+        t = threading.Thread(
+            target=self._accept_loop, name="AcceptLoop", daemon=True
+        )
+        t.start()
+        self._threads.append(t)
+
+        logging.info("Server started; press Ctrl‑C to stop.")
+        try:
+            while not self._shutdown.is_set():
+                # ---- place periodic server‑wide work here (e.g. broadcast) ----
+                time.sleep(0.05)
+        except KeyboardInterrupt:
+            logging.info("KeyboardInterrupt – shutting down.")
+        finally:
+            self.stop()
+
+    def stop(self) -> None:
+        """Signal all threads to exit and wait for them to finish."""
+        if self._shutdown.is_set():
+            return                     # already stopping
+
+        logging.info("Stopping server ...")
+        self._shutdown.set()
+
+        # close player sockets so their recv() unblocks
+        with self._player_lock:
+            for p in self._players:
                 try:
+<<<<<<< patch-1
+                    p.shutdown(socket.SHUT_RDWR)
+                except OSError:
+=======
                     data = conn.recv(4096)
                     if len(data):
                         x, y = struct.unpack('ff', data)
                         print(f"Received: {x}, {y}")
                 except socket.timeout:
+>>>>>>> main
                     pass
-                except (ConnectionAbortedError, ConnectionResetError):
-                    break
-        self.thread_count -= 1
+                p.close()
 
-    # listener for connections that runs on its own thread
-    def connection_listen_loop(self):
+        # wait for every background thread
+        for t in self._threads:
+            t.join()
+        logging.info("Server stopped cleanly.")
 
-        self.thread_count += 1
+    # ..................................................................... #
+    # Internals
+    # ..................................................................... #
 
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s: # TCP socket
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True) # optional: easier to reuse address
-            s.bind((self.host, self.port)) # listener
-            
-            while not self.kill:
-                s.settimeout(1) # prevents getting stuck in a socket call when trying to stop thread
-                s.listen()
-                print(f"Server is listening on port {self.port}...")
+    def _accept_loop(self) -> None:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as srv:
+            srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            srv.bind((self.cfg.host, self.cfg.port))
+            srv.listen(self.cfg.listen_backlog)
+            srv.settimeout(1.0)        # short timeout to poll shutdown flag
+
+            logging.info(
+                "Listening on %s:%d ...", self.cfg.host, self.cfg.port
+            )
+
+            while not self._shutdown.is_set():
                 try:
-                    conn, addr = s.accept()
-                    print("New Connection: ", conn, addr)
-                    if len(self.players) < 4:
-                        self.players.append(conn)
-                        threading.Thread(target=self.run_player_listener, args=(conn,)).start()
+                    conn, addr = srv.accept()
                 except socket.timeout:
-                    # when no one connects, just move on
-                    continue
-                time.sleep(0.1)
-        self.thread_count -= 1
-    
-    def await_kill(self):
-        self.kill = True
-        while self.thread_count:
-            time.sleep(0.01)
-        print("Killed Server")
-        
-    def run(self):
-        threading.Thread(target=self.connection_listen_loop).start()
+                    continue           # check shutdown flag again
+                except OSError:
+                    break              # socket closed during shutdown
+
+                if not self._add_player(conn, addr):
+                    conn.close()
+
+    def _add_player(self, conn: socket.socket, addr: Tuple[str, int]) -> bool:
+        with self._player_lock:
+            if len(self._players) >= self.cfg.max_players:
+                logging.warning("Rejecting %s – lobby full", addr)
+                return False
+            self._players.append(conn)
+
+        t = threading.Thread(
+            target=self._player_loop,
+            args=(conn, addr),
+            name=f"Player{addr}",
+            daemon=True,
+        )
+        t.start()
+        self._threads.append(t)
+        logging.info("Accepted %s. Active players: %d", addr, len(self._players))
+        return True
+
+    def _player_loop(self, conn: socket.socket, addr: Tuple[str, int]) -> None:
+        msg_size = struct.calcsize(self.cfg.msg_fmt)
+        conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        conn.settimeout(self.cfg.recv_timeout)
+
         try:
-            while True:
-                # server action here
+            with conn:
+                buf = bytearray()
+                while not self._shutdown.is_set():
+                    try:
+                        chunk = conn.recv(4096)
+                        if not chunk:
+                            break      # orderly shutdown from peer
+                        buf.extend(chunk)
 
-                # for player_conn in self.players:
-                #     try:
-                #         player_conn.send(self.serialize())
-                #     except OSError:
-                #         pass
-                time.sleep(0.05)
-        except KeyboardInterrupt:
-            self.await_kill()
+                        # process complete messages
+                        while len(buf) >= msg_size:
+                            part = bytes(buf[:msg_size])
+                            del buf[:msg_size]
+                            x, y = struct.unpack(self.cfg.msg_fmt, part)
+                            logging.debug("Received %s from %s", (x, y), addr)
+                    except socket.timeout:
+                        continue       # just loop again
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
+            logging.warning("Lost connection to %s", addr)
+        finally:
+            with self._player_lock:
+                try:
+                    self._players.remove(conn)
+                except ValueError:
+                    pass
+            logging.info("Player %s disconnected. Active: %d",
+                         addr, len(self._players))
 
-Server().run()
+    # ..................................................................... #
+    # Optional helper: broadcast binary data to everyone
+    # ..................................................................... #
+
+    def broadcast(self, payload: bytes) -> None:
+        with self._player_lock:
+            dead: List[socket.socket] = []
+            for p in self._players:
+                try:
+                    p.sendall(payload)
+                except OSError:
+                    dead.append(p)
+            for p in dead:             # clean up broken sockets
+                self._players.remove(p)
+        if dead:
+            logging.info("Cleaned up %d dead sockets during broadcast", len(dead))
+
+
+# --------------------------------------------------------------------------- #
+# Launch
+# --------------------------------------------------------------------------- #
+
+if __name__ == "__main__":
+    cfg = ServerConfig(port=9_999, log_level=logging.DEBUG)   # tweak as needed
+    Server(cfg).start()
