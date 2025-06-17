@@ -23,7 +23,7 @@ class AimIndicator(pygame.sprite.Sprite):
 
         # sprite setup
         super().__init__(groups)
-        self.aim_surf = pygame.image.load(join('assets', 'images', 'gun', 'gun.png')).convert_alpha()
+        self.aim_surf = pygame.image.load(join('assets', 'images', 'gun', 'sword.png')).convert_alpha()
         self.image = self.aim_surf
         self.rect = self.image.get_frect(center = self.player.rect.center + self.player_direction * self.distance)
 
@@ -54,17 +54,33 @@ class Bullet(pygame.sprite.Sprite):
         self.image = surf
         self.rect = self.image.get_frect(center = pos)
         self.spawn_time = pygame.time.get_ticks()
-        self.duration = 1000
+        self.duration = 2000
         self.direction = direction
-        self.speed = 1200
+        self.speed = 500
+        self.animation_speed = 10
+        self.frame_index = 0
+        
+        self.frames = []
+        scale = 2
+        for frame_index in range(4):
+            rect = pygame.Rect(frame_index*32, 0, 32, 32)
+            frame = self.image.subsurface(rect).copy()
+            new_size = (int(rect.width * scale), int(rect.height * scale))
+            frame = pygame.transform.scale(frame, new_size)
+            self.frames.append(frame)
+        print(self.frames)
+    def animate(self, dt):
+        self.frame_index += self.animation_speed * dt
+        self.image = self.frames[int(self.frame_index) % len(self.frames)]
 
     def update(self, dt):
         self.rect.center += self.direction * self.speed * dt
+        self.animate(dt)
         if pygame.time.get_ticks() - self.spawn_time >= self.duration:
             self.kill()
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, pos, frames, groups, player, collision_sprites):
+    def __init__(self, pos, frames, groups, player, collision_sprites, death_sound):
         super().__init__(groups)
         self.player = player
 
@@ -82,6 +98,7 @@ class Enemy(pygame.sprite.Sprite):
 
         self.death_time = 0
         self.death_duration = 200
+        self.death_sound = death_sound
 
     def move(self, dt):
         # get direction
@@ -117,6 +134,7 @@ class Enemy(pygame.sprite.Sprite):
 
     def death_timer(self):
         if pygame.time.get_ticks() - self.death_time >= self.death_duration:
+            self.death_sound.play()
             self.kill()
 
     def animate(self, dt):

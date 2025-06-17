@@ -59,7 +59,7 @@ class Game:
                 self.can_attack = True
 
     def load_images(self):
-        self.bullet_surf = pygame.image.load(join('assets', 'images', 'gun', 'bullet.png')).convert_alpha()
+        self.bullet_surf = pygame.image.load(join('assets', 'images', 'gun', 'slash.png')).convert_alpha()
         folders = list(walk(join('assets', 'images', 'enemies')))[0][1]
         self.enemy_frames = {}
         for folder in folders:
@@ -97,14 +97,14 @@ class Game:
             for attack in self.attack_sprites:
                 collision_sprites = pygame.sprite.spritecollide(attack, self.enemy_sprites, False, pygame.sprite.collide_mask)
                 if collision_sprites:
-                    self.hit_sound.play()
                     for sprite in collision_sprites:
                         sprite.destroy() 
-                    attack.kill()
+                    
 
     def player_collision(self):
         if pygame.sprite.spritecollide(self.player, self.enemy_sprites, False):
-            self.running = False
+            # self.running = False
+            pass
         
 
     def run(self):
@@ -115,7 +115,7 @@ class Game:
                 if event.type == pygame.QUIT:
                     self.running = False
                 if event.type == self.enemy_event:
-                    Enemy(choice(self.spawn_positions), choice(list(self.enemy_frames.values())), (self.all_sprites, self.enemy_sprites), self.player, self.collision_sprites)
+                    Enemy(choice(self.spawn_positions), choice(list(self.enemy_frames.values())), (self.all_sprites, self.enemy_sprites), self.player, self.collision_sprites, self.hit_sound)
         
             # update
             self.attack_timer()
